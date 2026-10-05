@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-// Configuración de Supabase
+// Configuración de Supabase con tus credenciales reales
 const supabaseUrl = 'https://qpbuauzuqniamvnvtwkl.supabase.co';
-const supabaseKey = 'sb_publishable_PHHcoLCpNLCQe3Lh9GKz_A_OAGMeKap'; 
+const supabaseKey = 'sb_publishable_PHHCoLCpNLCQe3Lh9GKz_A_OAGMe...'; // Asegúrate de copiar tu llave completa desde Supabase si falta un fragmento
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function App() {
