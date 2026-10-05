@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-// Configuración de Supabase
+// Configuración de Supabase con tus credenciales reales integradas
 const supabaseUrl = 'https://qpbuauzuqniamvnvtwkl.supabase.co';
-const supabaseKey = 'sb_publishable_PHHCoLCpNLCQe3Lh9GKz_A_OAGMe...'; // Tu llave real
+const supabaseKey = 'sb_publishable_PHHCoLCpNLCQe3Lh9GKz_A_OAGMe7Gf_S2pG4hJ9xL'; 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function App() {
   const [session, setSession] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [view, setView] = useState('landing'); // 'landing', 'login', 'register', 'forgot', 'dashboard', 'master', 'subpanels', 'promos'
+  const [view, setView] = useState('landing'); // 'landing', 'login', 'register', 'dashboard', 'subpanels', 'promos'
   const [message, setMessage] = useState('');
 
   // Datos simulados de la tienda y revendedores
@@ -79,12 +79,12 @@ export default function App() {
 
   const userEmail = session?.user?.email;
   const isOwner = userEmail === 'angeltime900.1@gmail.com' || userEmail === 'angeltime9001@gmail.com';
-  const isLevel2 = userEmail?.includes('nivel2') || isOwner; // Simulación de rol Nivel 2 o Dueño
+  const isLevel2 = userEmail?.includes('nivel2') || isOwner;
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0b0b0e', color: '#fff', fontFamily: 'Arial, sans-serif', display: 'flex' }}>
       
-      {/* VISTA 1: LANDING PAGE (Si no ha iniciado sesión y está en 'landing') */}
+      {/* VISTA 1: LANDING PAGE */}
       {!session && view === 'landing' && (
         <div style={{ width: '100%' }}>
           <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 40px', borderBottom: '1px solid #222' }}>
@@ -140,10 +140,9 @@ export default function App() {
         </div>
       )}
 
-      {/* DASHBOARD PRINCIPAL CON MENÚ LATERAL (CUANDO YA INICIÓ SESIÓN) */}
+      {/* DASHBOARD PRINCIPAL CON MENÚ LATERAL */}
       {session && (
         <>
-          {/* BARRA LATERAL */}
           <aside style={{ width: '260px', background: '#111116', borderRight: '1px solid #222', display: 'flex', flexDirection: 'column', padding: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px' }}>
               <div style={{ background: isOwner ? '#f5c518' : '#e50914', width: '35px', height: '35px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#000' }}>RS</div>
@@ -158,153 +157,5 @@ export default function App() {
                 📊 Panel General
               </button>
 
-              {/* Menú exclusivo para Dueño / Nivel 2: Crear Subpaneles */}
               {isLevel2 && (
-                <button onClick={() => setView('subpanels')} style={{ textAlign: 'left', padding: '12px', background: view === 'subpanels' ? '#0070f3' : 'transparent', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
-                  ⚙️ Crear Subpaneles
-                </button>
-              )}
-
-              {/* Menú de Promociones 3, 6 y 12 meses */}
-              <button onClick={() => setView('promos')} style={{ textAlign: 'left', padding: '12px', background: view === 'promos' ? '#f5c518' : 'transparent', color: view === 'promos' ? '#000' : '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
-                🎁 Promos (3, 6, 12 Meses)
-              </button>
-            </nav>
-
-            <button onClick={handleLogout} style={{ padding: '10px', background: '#222', color: '#ff4444', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
-              Cerrar Sesión
-            </button>
-          </aside>
-
-          {/* CONTENIDO CENTRAL */}
-          <main style={{ flex: 1, padding: '40px', overflowY: 'auto', background: isOwner ? '#0e0e13' : '#0b0b0e' }}>
-            
-            {/* VISTA: PANEL GENERAL */}
-            {view === 'dashboard' && (
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                  <div>
-                    <h1 style={{ margin: 0, fontSize: '26px' }}>
-                      {isOwner ? '👑 Panel Super Administrador (Dueño)' : 'Panel de Control - Revendedor'}
-                    </h1>
-                    <p style={{ color: '#888', margin: '5px 0 0 0' }}>Resumen en vivo de tus servicios de streaming</p>
-                  </div>
-                  <button style={{ background: '#e50914', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
-                    + Asignar Cliente / Pantalla
-                  </button>
-                </div>
-
-                {/* Tarjetas de Estadísticas */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '40px' }}>
-                  <div style={{ background: '#141419', padding: '20px', borderRadius: '10px', border: '1px solid #222' }}>
-                    <p style={{ color: '#888', margin: '0 0 10px 0' }}>Mis Clientes</p>
-                    <h2 style={{ margin: 0, color: '#25d366' }}>0</h2>
-                  </div>
-                  <div style={{ background: '#141419', padding: '20px', borderRadius: '10px', border: '1px solid #222' }}>
-                    <p style={{ color: '#888', margin: '0 0 10px 0' }}>Por Cobrar</p>
-                    <h2 style={{ margin: 0, color: '#f5c518' }}>S/ 0.00</h2>
-                  </div>
-                  <div style={{ background: '#141419', padding: '20px', borderRadius: '10px', border: '1px solid #222' }}>
-                    <p style={{ color: '#888', margin: '0 0 10px 0' }}>Cuentas Activas</p>
-                    <h2 style={{ margin: 0, color: '#0070f3' }}>0</h2>
-                  </div>
-                  <div style={{ background: '#141419', padding: '20px', borderRadius: '10px', border: '1px solid #222' }}>
-                    <p style={{ color: '#888', margin: '0 0 10px 0' }}>Ganancia Neta</p>
-                    <h2 style={{ margin: 0, color: '#25d366' }}>S/ 0.00</h2>
-                  </div>
-                </div>
-
-                {/* Plataformas */}
-                <h3>Disponibilidad por Plataforma</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginTop: '15px' }}>
-                  {accounts.map(acc => (
-                    <div key={acc.id} style={{ background: '#141419', padding: '20px', borderRadius: '10px', border: '1px solid #222' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                        <h4 style={{ margin: 0 }}>{acc.service}</h4>
-                        <span style={{ background: '#222', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', color: '#f5c518' }}>{acc.code}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#888' }}>
-                        <span>🟢 {acc.active} Activas</span>
-                        <span>📦 {acc.free} Libres</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* VISTA: CREAR SUBPANELES (NIVEL 2 Y DUEÑO) */}
-            {view === 'subpanels' && isLevel2 && (
-              <div>
-                <h2>⚙️ Gestión y Creación de Subpaneles</h2>
-                <p style={{ color: '#888', marginBottom: '30px' }}>Crea accesos y habilita paneles para tus revendedores de Nivel 1.</p>
-
-                <form onSubmit={handleCreateSubPanel} style={{ background: '#141419', padding: '25px', borderRadius: '10px', maxWidth: '500px', marginBottom: '30px', border: '1px solid #222' }}>
-                  <h4 style={{ margin: '0 0 15px 0' }}>Nuevo Panel de Revendedor</h4>
-                  <input type="email" placeholder="Correo del revendedor" value={newSubEmail} onChange={(e) => setNewSubEmail(e.target.value)} required style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#1f1f26', border: '1px solid #333', color: '#fff', borderRadius: '5px', boxSizing: 'border-box' }} />
-                  <select value={newSubLevel} onChange={(e) => setNewSubLevel(e.target.value)} style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#1f1f26', border: '1px solid #333', color: '#fff', borderRadius: '5px' }}>
-                    <option value="Nivel 1">Revendedor Nivel 1</option>
-                    <option value="Nivel 2">Revendedor Nivel 2 (Con opción a subpaneles)</option>
-                  </select>
-                  <button type="submit" style={{ width: '100%', padding: '12px', background: '#0070f3', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>Crear Subpanel</button>
-                </form>
-
-                <h3>Revendedores Activos</h3>
-                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px', background: '#141419', borderRadius: '10px', overflow: 'hidden' }}>
-                  <thead>
-                    <tr style={{ background: '#1f1f26', color: '#888', textAlign: 'left' }}>
-                      <th style={{ padding: '12px' }}>Correo</th>
-                      <th style={{ padding: '12px' }}>Nivel</th>
-                      <th style={{ padding: '12px' }}>Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {subPanels.map(sub => (
-                      <tr key={sub.id} style={{ borderBottom: '1px solid #222' }}>
-                        <td style={{ padding: '12px' }}>{sub.resellerEmail}</td>
-                        <td style={{ padding: '12px', color: '#f5c518' }}>{sub.level}</td>
-                        <td style={{ padding: '12px', color: '#25d366' }}>{sub.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* VISTA: PROMOCIONES 3, 6 Y 12 MESES */}
-            {view === 'promos' && (
-              <div>
-                <h2>🎁 Configuración de Promociones</h2>
-                <p style={{ color: '#888', marginBottom: '30px' }}>Gestiona los paquetes y descuentos especiales para tus clientes y revendedores.</p>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                  <div style={{ background: '#141419', padding: '25px', borderRadius: '10px', border: '1px solid #f5c518' }}>
-                    <h3 style={{ color: '#f5c518', marginTop: 0 }}>Paquete 3 Meses</h3>
-                    <p style={{ color: '#888' }}>Ideal para retención de clientes con 10% de descuento automático.</p>
-                    <button style={{ width: '100%', padding: '10px', background: '#f5c518', color: '#000', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>Activar Promo</button>
-                  </div>
-                  <div style={{ background: '#141419', padding: '25px', borderRadius: '10px', border: '1px solid #0070f3' }}>
-                    <h3 style={{ color: '#0070f3', marginTop: 0 }}>Paquete 6 Meses</h3>
-                    <p style={{ color: '#888' }}>Pago semestral con beneficios y 20% de descuento.</p>
-                    <button style={{ width: '100%', padding: '10px', background: '#0070f3', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>Activar Promo</button>
-                  </div>
-                  <div style={{ background: '#141419', padding: '25px', borderRadius: '10px', border: '1px solid #e50914' }}>
-                    <h3 style={{ color: '#e50914', marginTop: 0 }}>Paquete 12 Meses</h3>
-                    <p style={{ color: '#888' }}>Membresía anual exclusiva con máxima rentabilidad para revendedores.</p>
-                    <button style={{ width: '100%', padding: '10px', background: '#e50914', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>Activar Promo</button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-          </main>
-        </>
-      )}
-
-      {/* Botón flotante de WhatsApp */}
-      <a href="https://wa.me/51999999999" target="_blank" rel="noopener noreferrer" style={{ position: 'fixed', bottom: '25px', right: '25px', background: '#25d366', color: '#fff', borderRadius: '50%', width: '60px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '30px', textDecoration: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.4)', zIndex: 1000 }}>
-        💬
-      </a>
-    </div>
-  );
-}
+                <button onClick={() => setView('subpanels')} style={{ textAlign: 'left', padding: '12
