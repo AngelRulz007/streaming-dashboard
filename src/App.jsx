@@ -10,19 +10,23 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [view, setView] = useState('landing');
+  const [view, setView] = useState('landing'); // 'landing', 'login', 'register', 'forgot', 'dashboard', 'master', 'subpanels', 'promos'
   const [message, setMessage] = useState('');
 
-  // Estados para el Panel Master (Gestión de cuentas y clientes)
+  // Datos simulados de la tienda y revendedores
   const [accounts, setAccounts] = useState([
-    { id: 1, service: 'Netflix', email: 'net_master@rulz.com', profiles: 5, activeProfiles: 4, expiry: '2026-11-15' },
-    { id: 2, service: 'Disney+', email: 'disney_master@rulz.com', profiles: 7, activeProfiles: 6, expiry: '2026-11-20' },
-    { id: 3, service: 'Max (HBO)', email: 'max_master@rulz.com', profiles: 5, activeProfiles: 3, expiry: '2026-11-10' }
+    { id: 1, service: 'Netflix', code: 'NET', active: 0, free: 5 },
+    { id: 2, service: 'Max (HBO)', code: 'MAX', active: 0, free: 4 },
+    { id: 3, service: 'Disney+', code: 'DS', active: 0, free: 6 },
+    { id: 4, service: 'Amazon Prime', code: 'AMA', active: 0, free: 3 },
   ]);
-  const [clients, setClients] = useState([
-    { id: 1, name: 'Juan Pérez', service: 'Netflix - Perfil 2', phone: '51999888777', status: 'Activo' },
-    { id: 2, name: 'María Gómez', service: 'Disney+ - Perfil 4', phone: '51911223344', status: 'Por Renovar' }
+
+  const [subPanels, setSubPanels] = useState([
+    { id: 1, resellerEmail: 'revendedor1@gmail.com', level: 'Nivel 1', status: 'Activo' }
   ]);
+
+  const [newSubEmail, setNewSubEmail] = useState('');
+  const [newSubLevel, setNewSubLevel] = useState('Nivel 1');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -55,20 +59,7 @@ export default function App() {
     if (error) {
       setMessage('Error al registrarse: ' + error.message);
     } else {
-      setMessage('¡Registro exitoso! Revisa tu correo para confirmar tu cuenta.');
-    }
-  };
-
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    setMessage('');
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin,
-    });
-    if (error) {
-      setMessage('Error: ' + error.message);
-    } else {
-      setMessage('¡Correo de recuperación enviado! Revisa tu bandeja de entrada.');
+      setMessage('¡Registro exitoso! Revisa tu correo.');
     }
   };
 
@@ -78,169 +69,239 @@ export default function App() {
     setView('landing');
   };
 
+  const handleCreateSubPanel = (e) => {
+    e.preventDefault();
+    if (!newSubEmail) return;
+    setSubPanels([...subPanels, { id: Date.now(), resellerEmail: newSubEmail, level: newSubLevel, status: 'Activo' }]);
+    setNewSubEmail('');
+    alert('¡Subpanel creado con éxito!');
+  };
+
   const userEmail = session?.user?.email;
-  const isAdmin = userEmail === 'angeltime900.1@gmail.com' || userEmail === 'angeltime9001@gmail.com';
+  const isOwner = userEmail === 'angeltime900.1@gmail.com' || userEmail === 'angeltime9001@gmail.com';
+  const isLevel2 = userEmail?.includes('nivel2') || isOwner; // Simulación de rol Nivel 2 o Dueño
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0f0f11', color: '#fff', fontFamily: 'Arial, sans-serif' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#0b0b0e', color: '#fff', fontFamily: 'Arial, sans-serif', display: 'flex' }}>
       
-      {/* Barra superior */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 40px', borderBottom: '1px solid #222' }}>
-        <h2 style={{ color: '#e50914', margin: 0, cursor: 'pointer' }} onClick={() => setView('landing')}>RulzStreaming</h2>
-        <div>
-          {!session ? (
+      {/* VISTA 1: LANDING PAGE (Si no ha iniciado sesión y está en 'landing') */}
+      {!session && view === 'landing' && (
+        <div style={{ width: '100%' }}>
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 40px', borderBottom: '1px solid #222' }}>
+            <h2 style={{ color: '#e50914', margin: 0 }}>RulzStreaming</h2>
             <button onClick={() => setView('login')} style={{ background: '#e50914', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>
               Iniciar sesión
             </button>
-          ) : (
-            <button onClick={handleLogout} style={{ background: '#333', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>
+          </header>
+          <div style={{ textAlign: 'center', padding: '100px 20px', maxWidth: '800px', margin: '0 auto' }}>
+            <span style={{ background: 'rgba(229, 9, 20, 0.2)', color: '#e50914', padding: '6px 15px', borderRadius: '20px', fontSize: '14px', fontWeight: 'bold' }}>
+              🎁 ¡Promociones 3, 6 y 12 Meses Disponibles!
+            </span>
+            <h1 style={{ fontSize: '48px', margin: '20px 0', lineHeight: '1.2' }}>
+              Lleva tu venta de <span style={{ color: '#f5c518' }}>streaming</span> al siguiente nivel
+            </h1>
+            <p style={{ color: '#aaa', fontSize: '18px', marginBottom: '30px' }}>
+              Organiza cuentas, perfiles y revendedores con automatización por WhatsApp.
+            </p>
+            <button onClick={() => setView('register')} style={{ background: '#e50914', color: '#fff', border: 'none', padding: '15px 30px', fontSize: '16px', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>
+              Comenzar Ahora →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* PANTALLAS DE LOGIN / REGISTRO */}
+      {!session && (view === 'login' || view === 'register') && (
+        <div style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ width: '400px', background: '#141419', padding: '30px', borderRadius: '10px', border: '1px solid #222' }}>
+            {message && <div style={{ background: '#333', padding: '10px', marginBottom: '15px', borderRadius: '5px', fontSize: '13px' }}>{message}</div>}
+            
+            {view === 'login' && (
+              <form onSubmit={handleLogin}>
+                <h3 style={{ marginBottom: '20px' }}>Iniciar Sesión</h3>
+                <input type="email" placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#1f1f26', border: '1px solid #333', color: '#fff', borderRadius: '5px', boxSizing: 'border-box' }} />
+                <input type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#1f1f26', border: '1px solid #333', color: '#fff', borderRadius: '5px', boxSizing: 'border-box' }} />
+                <button type="submit" style={{ width: '100%', padding: '12px', background: '#e50914', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>Ingresar</button>
+                <p onClick={() => setView('register')} style={{ textAlign: 'center', marginTop: '15px', color: '#e50914', cursor: 'pointer', fontSize: '13px' }}>¿No tienes cuenta? Regístrate</p>
+              </form>
+            )}
+
+            {view === 'register' && (
+              <form onSubmit={handleRegister}>
+                <h3 style={{ marginBottom: '20px' }}>Crear Cuenta</h3>
+                <input type="email" placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#1f1f26', border: '1px solid #333', color: '#fff', borderRadius: '5px', boxSizing: 'border-box' }} />
+                <input type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#1f1f26', border: '1px solid #333', color: '#fff', borderRadius: '5px', boxSizing: 'border-box' }} />
+                <button type="submit" style={{ width: '100%', padding: '12px', background: '#e50914', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>Registrarse</button>
+                <p onClick={() => setView('login')} style={{ textAlign: 'center', marginTop: '15px', color: '#aaa', cursor: 'pointer', fontSize: '13px' }}>← Volver al login</p>
+              </form>
+            )}
+            <button onClick={() => setView('landing')} style={{ background: 'transparent', color: '#888', border: 'none', marginTop: '15px', cursor: 'pointer', width: '100%' }}>Volver a la web</button>
+          </div>
+        </div>
+      )}
+
+      {/* DASHBOARD PRINCIPAL CON MENÚ LATERAL (CUANDO YA INICIÓ SESIÓN) */}
+      {session && (
+        <>
+          {/* BARRA LATERAL */}
+          <aside style={{ width: '260px', background: '#111116', borderRight: '1px solid #222', display: 'flex', flexDirection: 'column', padding: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px' }}>
+              <div style={{ background: isOwner ? '#f5c518' : '#e50914', width: '35px', height: '35px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#000' }}>RS</div>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '15px' }}>{isOwner ? '👑 Dueño Master' : '📦 Panel Revendedor'}</h4>
+                <span style={{ fontSize: '11px', color: '#888' }}>{userEmail}</span>
+              </div>
+            </div>
+
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+              <button onClick={() => setView('dashboard')} style={{ textAlign: 'left', padding: '12px', background: view === 'dashboard' ? '#e50914' : 'transparent', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+                📊 Panel General
+              </button>
+
+              {/* Menú exclusivo para Dueño / Nivel 2: Crear Subpaneles */}
+              {isLevel2 && (
+                <button onClick={() => setView('subpanels')} style={{ textAlign: 'left', padding: '12px', background: view === 'subpanels' ? '#0070f3' : 'transparent', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+                  ⚙️ Crear Subpaneles
+                </button>
+              )}
+
+              {/* Menú de Promociones 3, 6 y 12 meses */}
+              <button onClick={() => setView('promos')} style={{ textAlign: 'left', padding: '12px', background: view === 'promos' ? '#f5c518' : 'transparent', color: view === 'promos' ? '#000' : '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+                🎁 Promos (3, 6, 12 Meses)
+              </button>
+            </nav>
+
+            <button onClick={handleLogout} style={{ padding: '10px', background: '#222', color: '#ff4444', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
               Cerrar Sesión
             </button>
-          )}
-        </div>
-      </header>
+          </aside>
 
-      {/* Landing Page */}
-      {view === 'landing' && (
-        <div style={{ textAlign: 'center', padding: '80px 20px', maxWidth: '800px', margin: '0 auto' }}>
-          <span style={{ background: 'rgba(229, 9, 20, 0.2)', color: '#e50914', padding: '6px 15px', borderRadius: '20px', fontSize: '14px', fontWeight: 'bold' }}>
-            🎁 ¡Prueba Gratis de 30 Días sin compromiso!
-          </span>
-          <h1 style={{ fontSize: '48px', margin: '20px 0', lineHeight: '1.2' }}>
-            Lleva tu venta de <span style={{ color: '#f5c518' }}>streaming</span> al siguiente nivel con RulzStreaming
-          </h1>
-          <p style={{ color: '#aaa', fontSize: '18px', marginBottom: '30px' }}>
-            Organiza proveedores, cuentas, perfiles y cobros con un flujo de trabajo automatizado por WhatsApp en un solo clic.
-          </p>
-          <button onClick={() => setView('register')} style={{ background: '#e50914', color: '#fff', border: 'none', padding: '15px 30px', fontSize: '16px', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>
-            Comenzar Prueba Gratis →
-          </button>
-        </div>
-      )}
+          {/* CONTENIDO CENTRAL */}
+          <main style={{ flex: 1, padding: '40px', overflowY: 'auto', background: isOwner ? '#0e0e13' : '#0b0b0e' }}>
+            
+            {/* VISTA: PANEL GENERAL */}
+            {view === 'dashboard' && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+                  <div>
+                    <h1 style={{ margin: 0, fontSize: '26px' }}>
+                      {isOwner ? '👑 Panel Super Administrador (Dueño)' : 'Panel de Control - Revendedor'}
+                    </h1>
+                    <p style={{ color: '#888', margin: '5px 0 0 0' }}>Resumen en vivo de tus servicios de streaming</p>
+                  </div>
+                  <button style={{ background: '#e50914', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+                    + Asignar Cliente / Pantalla
+                  </button>
+                </div>
 
-      {/* Formularios */}
-      {(view === 'login' || view === 'register' || view === 'forgot') && (
-        <div style={{ maxWidth: '400px', margin: '60px auto', background: '#1a1a1e', padding: '30px', borderRadius: '10px', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>
-          {message && <div style={{ background: '#333', padding: '10px', marginBottom: '15px', borderRadius: '5px', fontSize: '14px' }}>{message}</div>}
+                {/* Tarjetas de Estadísticas */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '40px' }}>
+                  <div style={{ background: '#141419', padding: '20px', borderRadius: '10px', border: '1px solid #222' }}>
+                    <p style={{ color: '#888', margin: '0 0 10px 0' }}>Mis Clientes</p>
+                    <h2 style={{ margin: 0, color: '#25d366' }}>0</h2>
+                  </div>
+                  <div style={{ background: '#141419', padding: '20px', borderRadius: '10px', border: '1px solid #222' }}>
+                    <p style={{ color: '#888', margin: '0 0 10px 0' }}>Por Cobrar</p>
+                    <h2 style={{ margin: 0, color: '#f5c518' }}>S/ 0.00</h2>
+                  </div>
+                  <div style={{ background: '#141419', padding: '20px', borderRadius: '10px', border: '1px solid #222' }}>
+                    <p style={{ color: '#888', margin: '0 0 10px 0' }}>Cuentas Activas</p>
+                    <h2 style={{ margin: 0, color: '#0070f3' }}>0</h2>
+                  </div>
+                  <div style={{ background: '#141419', padding: '20px', borderRadius: '10px', border: '1px solid #222' }}>
+                    <p style={{ color: '#888', margin: '0 0 10px 0' }}>Ganancia Neta</p>
+                    <h2 style={{ margin: 0, color: '#25d366' }}>S/ 0.00</h2>
+                  </div>
+                </div>
 
-          {view === 'login' && (
-            <form onSubmit={handleLogin}>
-              <h3 style={{ marginBottom: '20px' }}>Iniciar Sesión</h3>
-              <input type="email" placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#2a2a30', border: '1px solid #444', color: '#fff', borderRadius: '5px', boxSizing: 'border-box' }} />
-              <input type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#2a2a30', border: '1px solid #444', color: '#fff', borderRadius: '5px', boxSizing: 'border-box' }} />
-              <button type="submit" style={{ width: '100%', padding: '12px', background: '#e50914', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>Ingresar</button>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '15px', fontSize: '13px' }}>
-                <span onClick={() => setView('forgot')} style={{ color: '#aaa', cursor: 'pointer' }}>¿Olvidaste tu contraseña?</span>
-                <span onClick={() => setView('register')} style={{ color: '#e50914', cursor: 'pointer' }}>Registrarse</span>
+                {/* Plataformas */}
+                <h3>Disponibilidad por Plataforma</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginTop: '15px' }}>
+                  {accounts.map(acc => (
+                    <div key={acc.id} style={{ background: '#141419', padding: '20px', borderRadius: '10px', border: '1px solid #222' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                        <h4 style={{ margin: 0 }}>{acc.service}</h4>
+                        <span style={{ background: '#222', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', color: '#f5c518' }}>{acc.code}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#888' }}>
+                        <span>🟢 {acc.active} Activas</span>
+                        <span>📦 {acc.free} Libres</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </form>
-          )}
+            )}
 
-          {view === 'register' && (
-            <form onSubmit={handleRegister}>
-              <h3 style={{ marginBottom: '20px' }}>Crear Cuenta</h3>
-              <input type="email" placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#2a2a30', border: '1px solid #444', color: '#fff', borderRadius: '5px', boxSizing: 'border-box' }} />
-              <input type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#2a2a30', border: '1px solid #444', color: '#fff', borderRadius: '5px', boxSizing: 'border-box' }} />
-              <button type="submit" style={{ width: '100%', padding: '12px', background: '#e50914', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>Registrarse</button>
-              <p onClick={() => setView('login')} style={{ textAlign: 'center', marginTop: '15px', color: '#aaa', cursor: 'pointer', fontSize: '13px' }}>← Volver al login</p>
-            </form>
-          )}
+            {/* VISTA: CREAR SUBPANELES (NIVEL 2 Y DUEÑO) */}
+            {view === 'subpanels' && isLevel2 && (
+              <div>
+                <h2>⚙️ Gestión y Creación de Subpaneles</h2>
+                <p style={{ color: '#888', marginBottom: '30px' }}>Crea accesos y habilita paneles para tus revendedores de Nivel 1.</p>
 
-          {view === 'forgot' && (
-            <form onSubmit={handleForgotPassword}>
-              <h3 style={{ marginBottom: '20px' }}>Recuperar Contraseña</h3>
-              <input type="email" placeholder="Ingresa tu correo" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#2a2a30', border: '1px solid #444', color: '#fff', borderRadius: '5px', boxSizing: 'border-box' }} />
-              <button type="submit" style={{ width: '100%', padding: '12px', background: '#e50914', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>Enviar instrucciones</button>
-              <p onClick={() => setView('login')} style={{ textAlign: 'center', marginTop: '15px', color: '#aaa', cursor: 'pointer', fontSize: '13px' }}>← Volver al login</p>
-            </form>
-          )}
-        </div>
+                <form onSubmit={handleCreateSubPanel} style={{ background: '#141419', padding: '25px', borderRadius: '10px', maxWidth: '500px', marginBottom: '30px', border: '1px solid #222' }}>
+                  <h4 style={{ margin: '0 0 15px 0' }}>Nuevo Panel de Revendedor</h4>
+                  <input type="email" placeholder="Correo del revendedor" value={newSubEmail} onChange={(e) => setNewSubEmail(e.target.value)} required style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#1f1f26', border: '1px solid #333', color: '#fff', borderRadius: '5px', boxSizing: 'border-box' }} />
+                  <select value={newSubLevel} onChange={(e) => setNewSubLevel(e.target.value)} style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#1f1f26', border: '1px solid #333', color: '#fff', borderRadius: '5px' }}>
+                    <option value="Nivel 1">Revendedor Nivel 1</option>
+                    <option value="Nivel 2">Revendedor Nivel 2 (Con opción a subpaneles)</option>
+                  </select>
+                  <button type="submit" style={{ width: '100%', padding: '12px', background: '#0070f3', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>Crear Subpanel</button>
+                </form>
+
+                <h3>Revendedores Activos</h3>
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px', background: '#141419', borderRadius: '10px', overflow: 'hidden' }}>
+                  <thead>
+                    <tr style={{ background: '#1f1f26', color: '#888', textAlign: 'left' }}>
+                      <th style={{ padding: '12px' }}>Correo</th>
+                      <th style={{ padding: '12px' }}>Nivel</th>
+                      <th style={{ padding: '12px' }}>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {subPanels.map(sub => (
+                      <tr key={sub.id} style={{ borderBottom: '1px solid #222' }}>
+                        <td style={{ padding: '12px' }}>{sub.resellerEmail}</td>
+                        <td style={{ padding: '12px', color: '#f5c518' }}>{sub.level}</td>
+                        <td style={{ padding: '12px', color: '#25d366' }}>{sub.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* VISTA: PROMOCIONES 3, 6 Y 12 MESES */}
+            {view === 'promos' && (
+              <div>
+                <h2>🎁 Configuración de Promociones</h2>
+                <p style={{ color: '#888', marginBottom: '30px' }}>Gestiona los paquetes y descuentos especiales para tus clientes y revendedores.</p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                  <div style={{ background: '#141419', padding: '25px', borderRadius: '10px', border: '1px solid #f5c518' }}>
+                    <h3 style={{ color: '#f5c518', marginTop: 0 }}>Paquete 3 Meses</h3>
+                    <p style={{ color: '#888' }}>Ideal para retención de clientes con 10% de descuento automático.</p>
+                    <button style={{ width: '100%', padding: '10px', background: '#f5c518', color: '#000', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>Activar Promo</button>
+                  </div>
+                  <div style={{ background: '#141419', padding: '25px', borderRadius: '10px', border: '1px solid #0070f3' }}>
+                    <h3 style={{ color: '#0070f3', marginTop: 0 }}>Paquete 6 Meses</h3>
+                    <p style={{ color: '#888' }}>Pago semestral con beneficios y 20% de descuento.</p>
+                    <button style={{ width: '100%', padding: '10px', background: '#0070f3', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>Activar Promo</button>
+                  </div>
+                  <div style={{ background: '#141419', padding: '25px', borderRadius: '10px', border: '1px solid #e50914' }}>
+                    <h3 style={{ color: '#e50914', marginTop: 0 }}>Paquete 12 Meses</h3>
+                    <p style={{ color: '#888' }}>Membresía anual exclusiva con máxima rentabilidad para revendedores.</p>
+                    <button style={{ width: '100%', padding: '10px', background: '#e50914', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>Activar Promo</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </main>
+        </>
       )}
 
-      {/* Dashboard de Usuario */}
-      {view === 'dashboard' && session && (
-        <div style={{ maxWidth: '600px', margin: '60px auto', background: '#1a1a1e', padding: '30px', borderRadius: '10px' }}>
-          <h3>Panel de Usuario</h3>
-          <p style={{ color: '#aaa' }}>Bienvenido: {userEmail}</p>
-          <hr style={{ borderColor: '#333', margin: '20px 0' }} />
-          <p>Aquí puedes ver tus perfiles y servicios activos de streaming.</p>
-
-          {isAdmin && (
-            <button onClick={() => setView('master')} style={{ width: '100%', padding: '12px', background: '#0070f3', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', marginTop: '20px' }}>
-              ⚙️ Entrar al Panel Master (Administrador)
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* PANEL MASTER AVANZADO CON FUNCIONES */}
-      {view === 'master' && isAdmin && (
-        <div style={{ maxWidth: '900px', margin: '40px auto', background: '#1a1a1e', padding: '30px', borderRadius: '10px', border: '1px solid #0070f3' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2 style={{ color: '#0070f3', margin: 0 }}>Panel Master - Control Total</h2>
-            <button onClick={() => setView('dashboard')} style={{ padding: '8px 15px', background: '#444', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
-              ← Volver al Dashboard
-            </button>
-          </div>
-          <p style={{ color: '#aaa', marginBottom: '25px' }}>Gestión completa de proveedores, cuentas de streaming y renovaciones de clientes.</p>
-
-          {/* Sección de Cuentas */}
-          <div style={{ background: '#25252b', padding: '20px', borderRadius: '8px', marginBottom: '25px' }}>
-            <h3 style={{ marginBottom: '15px', color: '#f5c518' }}>📺 Cuentas y Pantallas Maestras</h3>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid #444', color: '#aaa' }}>
-                  <th style={{ padding: '8px' }}>Servicio</th>
-                  <th style={{ padding: '8px' }}>Correo de Cuenta</th>
-                  <th style={{ padding: '8px' }}>Perfiles Activos</th>
-                  <th style={{ padding: '8px' }}>Vencimiento</th>
-                </tr>
-              </thead>
-              <tbody>
-                {accounts.map(acc => (
-                  <tr key={acc.id} style={{ borderBottom: '1px solid #333' }}>
-                    <td style={{ padding: '10px', fontWeight: 'bold' }}>{acc.service}</td>
-                    <td style={{ padding: '10px', color: '#ccc' }}>{acc.email}</td>
-                    <td style={{ padding: '10px' }}>{acc.activeProfiles} / {acc.profiles}</td>
-                    <td style={{ padding: '10px', color: '#e50914' }}>{acc.expiry}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Sección de Clientes y Cobros */}
-          <div style={{ background: '#25252b', padding: '20px', borderRadius: '8px' }}>
-            <h3 style={{ marginBottom: '15px', color: '#25d366' }}>💬 Clientes y Cobros por WhatsApp</h3>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid #444', color: '#aaa' }}>
-                  <th style={{ padding: '8px' }}>Cliente</th>
-                  <th style={{ padding: '8px' }}>Servicio Asignado</th>
-                  <th style={{ padding: '8px' }}>Estado</th>
-                  <th style={{ padding: '8px' }}>Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {clients.map(client => (
-                  <tr key={client.id} style={{ borderBottom: '1px solid #333' }}>
-                    <td style={{ padding: '10px', fontWeight: 'bold' }}>{client.name}</td>
-                    <td style={{ padding: '10px', color: '#ccc' }}>{client.service}</td>
-                    <td style={{ padding: '10px', color: client.status === 'Activo' ? '#25d366' : '#f5c518' }}>{client.status}</td>
-                    <td style={{ padding: '10px' }}>
-                      <a href={`https://wa.me/${client.phone}?text=Hola%20${client.name},%20te%20escribo%20sobre%20tu%20cuenta%20de%20streaming.`} target="_blank" rel="noopener noreferrer" style={{ background: '#25d366', color: '#fff', padding: '5px 10px', borderRadius: '4px', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold' }}>
-                        Cobrar WhatsApp
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* WhatsApp */}
+      {/* Botón flotante de WhatsApp */}
       <a href="https://wa.me/51999999999" target="_blank" rel="noopener noreferrer" style={{ position: 'fixed', bottom: '25px', right: '25px', background: '#25d366', color: '#fff', borderRadius: '50%', width: '60px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '30px', textDecoration: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.4)', zIndex: 1000 }}>
         💬
       </a>
