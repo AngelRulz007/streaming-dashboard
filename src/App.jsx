@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // Configuración de Supabase con tus credenciales reales integradas
 const supabaseUrl = 'https://qpbuauzuqniamvnvtwkl.supabase.co';
-const supabaseKey = 'sb_publishable_PHHCoLCpNLCQe3Lh9GKz_A_OAGMe7Gf_S2pG4hJ9xL'; 
+const supabaseKey = 'sb_publishable_PHHcoLCpNLCQe3Lh9GKz_A_OAGMeKap'; 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function App() {
