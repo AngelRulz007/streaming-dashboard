@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+/* Animación: Flotar de abajo hacia arriba */
+@keyframes floatUp {
+  0% {
+    transform: translateY(105vh) translateX(0) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(50vh) translateX(15px) scale(0.9);
+    opacity: 0.45;
+  }
+  85% {
+    opacity: 0.35;
+  }
+  100% {
+    transform: translateY(-10vh) translateX(-15px) scale(0.7);
+    opacity: 0;
+  }
+}
+
+/* Animación: Flotar de arriba hacia abajo */
+@keyframes floatDown {
+  0% {
+    transform: translateY(-10vh) translateX(0) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(50vh) translateX(-15px) scale(0.9);
+    opacity: 0.45;
+  }
+  85% {
+    opacity: 0.35;
+  }
+  100% {
+    transform: translateY(105vh) translateX(15px) scale(0.7);
+    opacity: 0;
+  }
+}
+
+.bubble-up {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: radial-gradient(circle at 35% 35%, rgba(244, 63, 94, 0.6), rgba(128, 0, 32, 0.25) 70%, transparent 95%);
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.4), inset 0 0 4px rgba(255, 255, 255, 0.5);
+  animation: floatUp ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.bubble-down {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: radial-gradient(circle at 35% 35%, rgba(251, 113, 133, 0.5), rgba(159, 18, 57, 0.2) 70%, transparent 95%);
+  box-shadow: 0 0 8px rgba(251, 113, 133, 0.35), inset 0 0 4px rgba(255, 255, 255, 0.4);
+  animation: floatDown ease-in-out infinite;
+  will-change: transform, opacity;
+}
