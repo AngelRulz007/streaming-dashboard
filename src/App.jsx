@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // Configuración de Supabase con tus credenciales reales integradas
 const supabaseUrl = 'https://qpbuauzuqniamvnvtwkl.supabase.co';
-const supabaseKey = 'sb_publishable_PHHcoLCpNLCQe3Lh9GKz_A_OAGMeKap'; 
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYnVhdXp1cW5pYW12bnZ0d2tsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDk0MjYsImV4cCI6MjEwMjkyNTQyNn0.Ylr4O9Xt8iE-0Hs47dgZjc0cJr1PmsH5aRnsoeRHE6c'; 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function App() {
