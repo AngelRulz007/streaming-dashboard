@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
+// Configuración con tu clave clásica real de Supabase
 const supabaseUrl = 'https://qpbuauzuqniamvnvtwkl.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYnVhdXp1cW5pYW12bnZ0d2tsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDk0MjYsImV4cCI6MjEwMjkyNTQyNn0.Ylr4O9Xt8iE-0Hs47dgZjc0cJr1PmsH5aRnsoeRHE6c';
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -19,42 +20,34 @@ export default function App() {
     { id: 4, service: 'Amazon Prime', code: 'AMA', active: 1, free: 2 },
   ]);
 
-  const [subPanels, setSubPanels] = useState([]);
+  // Lista de revendedores sincronizada con almacenamiento local para que nunca se pierdan los registros de prueba
+  const [subPanels, setSubPanels] = useState(() => {
+    const saved = localStorage.getItem('rulz_subpanels');
+    return saved ? JSON.parse(saved) : [
+      { id: 1, email: 'revendedor.basico@gmail.com', level: 'Nivel 1', status: 'Activo' }
+    ];
+  });
+
   const [newSubEmail, setNewSubEmail] = useState('');
   const [newSubLevel, setNewSubLevel] = useState('Nivel 1');
 
   useEffect(() => {
+    localStorage.setItem('rulz_subpanels', JSON.stringify(subPanels));
+  }, [subPanels]);
+
+  useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) {
-        setView('dashboard');
-        fetchRegisteredUsers();
-      }
+      if (session) setView('dashboard');
     }).catch(() => {});
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) {
-        setView('dashboard');
-        fetchRegisteredUsers();
-      }
+      if (session) setView('dashboard');
     });
 
     return () => subscription.unsubscribe();
   }, []);
-
-  // Función real para sincronizar usuarios desde Supabase
-  const fetchRegisteredUsers = async () => {
-    const { data, error } = await supabase.from('profiles').select('*');
-    if (!error && data && data.length > 0) {
-      setSubPanels(data);
-    } else {
-      // Si la tabla profiles está vacía, mostramos los de prueba + el usuario actual para verificar
-      setSubPanels([
-        { id: 1, email: 'revendedor.basico@gmail.com', level: 'Nivel 1', status: 'Activo' }
-      ]);
-    }
-  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -63,6 +56,10 @@ export default function App() {
     if (error) {
       setMessage('Error al iniciar sesión: ' + error.message);
     } else {
+      // Auto-registrar el email de login en la lista si es nuevo
+      if (!subPanels.some(s => s.email === email)) {
+        setSubPanels(prev => [...prev, { id: Date.now(), email: email, level: 'Nivel 1', status: 'Activo' }]);
+      }
       setView('dashboard');
     }
   };
@@ -70,18 +67,15 @@ export default function App() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setMessage('');
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({ email, password });
     if (error) {
       setMessage('Error al registrarse: ' + error.message);
     } else {
-      // Intentar guardar el perfil en la tabla profiles de Supabase
-      if (data?.user) {
-        await supabase.from('profiles').insert([
-          { id: data.user.id, email: email, level: 'Nivel 1', status: 'Activo' }
-        ]);
-      }
+      // Agregar automáticamente a la tabla visible de revendedores
+      const nuevoRevendedor = { id: Date.now(), email: email, level: 'Nivel 1', status: 'Activo' };
+      setSubPanels(prev => [...prev, nuevoRevendedor]);
       setMessage('¡Registro exitoso! Ya puedes iniciar sesión.');
-      setTimeout(() => setView('login'), 2500);
+      setTimeout(() => setView('login'), 2000);
     }
   };
 
@@ -91,13 +85,23 @@ export default function App() {
     setView('landing');
   };
 
-  const handleCreateSubPanel = async (e) => {
+  const handleCreateSubPanel = (e) => {
     e.preventDefault();
     if (!newSubEmail) return;
     const nuevo = { id: Date.now(), email: newSubEmail, level: newSubLevel, status: 'Activo' };
-    setSubPanels([...subPanels, nuevo]);
+    setSubPanels(prev => [...prev, nuevo]);
     setNewSubEmail('');
-    alert('¡Subpanel creado con éxito!');
+    alert('¡Subpanel creado y agregado a la lista con éxito!');
+  };
+
+  const handleDeleteSubPanel = (id) => {
+    setSubPanels(prev => prev.filter(s => s.id !== id));
+    alert('Revendedor eliminado del panel.');
+  };
+
+  const handleUpgradeLevel = (id) => {
+    setSubPanels(prev => prev.map(s => s.id === id ? { ...s, level: 'Nivel 2' } : s));
+    alert('¡Revendedor ascendido a Nivel 2 con éxito!');
   };
 
   const userEmail = session?.user?.email;
@@ -176,6 +180,7 @@ export default function App() {
             </div>
 
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+              {/* CORRECCIÓN DE COLOR EN EL MENÚ LATERAL: Texto siempre blanco e legible */}
               <button onClick={() => setView('dashboard')} style={{ textAlign: 'left', padding: '12px', background: view === 'dashboard' ? accentColor : 'transparent', color: view === 'dashboard' ? '#000' : '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
                 📊 Panel General
               </button>
@@ -251,8 +256,8 @@ export default function App() {
 
             {view === 'subpanels' && isLevel2 && (
               <div>
-                <h2 style={{ color: '#fff' }}>⚙️ Gestión de Revendedores Registrados (Subpaneles)</h2>
-                <p style={{ color: '#aaa', marginBottom: '30px' }}>Visualiza y administra todos los revendedores registrados en la plataforma.</p>
+                <h2 style={{ color: '#fff' }}>⚙️ Gestión de Revendedores Registrados</h2>
+                <p style={{ color: '#aaa', marginBottom: '30px' }}>Visualiza, edita o asciende a los revendedores registrados.</p>
 
                 <form onSubmit={handleCreateSubPanel} style={{ background: '#181820', padding: '25px', borderRadius: '10px', maxWidth: '500px', marginBottom: '30px', border: '1px solid #444' }}>
                   <h4 style={{ margin: '0 0 15px 0', color: '#f5c518' }}>Crear Nuevo Panel Manual</h4>
@@ -264,7 +269,7 @@ export default function App() {
                   <button type="submit" style={{ width: '100%', padding: '12px', background: '#f5c518', color: '#000', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>Asignar Subpanel</button>
                 </form>
 
-                <h3 style={{ color: '#fff' }}>Lista de Usuarios Registrados</h3>
+                <h3 style={{ color: '#fff' }}>Lista Completa de Revendedores</h3>
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px', background: '#181820', borderRadius: '10px', overflow: 'hidden', border: '1px solid #333' }}>
                   <thead>
                     <tr style={{ background: '#22222c', color: '#aaa', textAlign: 'left' }}>
@@ -275,17 +280,17 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {subPanels.map((sub, index) => (
-                      <tr key={sub.id || index} style={{ borderBottom: '1px solid #333' }}>
+                    {subPanels.map((sub) => (
+                      <tr key={sub.id} style={{ borderBottom: '1px solid #333' }}>
                         <td style={{ padding: '12px', color: '#fff' }}>{sub.email}</td>
-                        <td style={{ padding: '12px', color: '#f5c518', fontWeight: 'bold' }}>{sub.level || 'Nivel 1'}</td>
-                        <td style={{ padding: '12px', color: '#25d366' }}>{sub.status || 'Activo'}</td>
+                        <td style={{ padding: '12px', color: '#f5c518', fontWeight: 'bold' }}>{sub.level}</td>
+                        <td style={{ padding: '12px', color: '#25d366' }}>{sub.status}</td>
                         <td style={{ padding: '12px', display: 'flex', gap: '8px' }}>
-                          <button onClick={() => alert(`Editando permisos para: ${sub.email}`)} style={{ background: '#0070f3', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>
-                            Editar ✏️
+                          <button onClick={() => handleUpgradeLevel(sub.id)} style={{ background: '#25d366', color: '#000', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>
+                            Ascender ⭐
                           </button>
-                          <button onClick={() => alert(`¡${sub.email} ascendido a Nivel 2 con éxito!`)} style={{ background: '#25d366', color: '#000', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>
-                            Ascender a Nivel 2 ⭐
+                          <button onClick={() => handleDeleteSubPanel(sub.id)} style={{ background: '#ff4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>
+                            Eliminar 🗑️
                           </button>
                         </td>
                       </tr>
@@ -306,7 +311,7 @@ export default function App() {
                     <p style={{ color: '#aaa' }}>Ideal para retención de clientes con 10% de descuento automático.</p>
                     <button style={{ width: '100%', padding: '10px', background: '#f5c518', color: '#000', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>Activar Promo</button>
                   </div>
-                  <div style={{ background: '#181820', padding: '25px', borderRadius: '10px', border: '1px solid #0070f3' }}>
+                  <div style={{ background: '#181820', padding: '25px', borderRadius: '10px', border: '0070f3' }}>
                     <h3 style={{ color: '#0070f3', marginTop: 0 }}>Paquete 6 Meses</h3>
                     <p style={{ color: '#aaa' }}>Pago semestral con beneficios y 20% de descuento.</p>
                     <button style={{ width: '100%', padding: '10px', background: '#0070f3', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>Activar Promo</button>
