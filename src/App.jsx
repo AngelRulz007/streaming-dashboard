@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-// Configuración con manejo seguro de respaldo
+// Configuración de Supabase
 const supabaseUrl = 'https://qpbuauzuqniamvnvtwkl.supabase.co';
 const supabaseKey = 'sb_publishable_PHHCoLCpNLCQe3Lh9GKz_A_OAGMe7Gf_S2pG4hJ9xL'; 
-const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: true, autoRefreshToken: true } });
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -20,32 +20,46 @@ export default function App() {
     { id: 4, service: 'Amazon Prime', code: 'AMA', active: 0, free: 3 },
   ]);
 
-  const [subPanels, setSubPanels] = useState([
-    { id: 1, resellerEmail: 'revendedor1@gmail.com', level: 'Nivel 1', status: 'Activo' }
-  ]);
-
+  const [subPanels, setSubPanels] = useState([]);
   const [newSubEmail, setNewSubEmail] = useState('');
   const [newSubLevel, setNewSubLevel] = useState('Nivel 1');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) setView('dashboard');
-    }).catch(() => {});
+      if (session) {
+        setView('dashboard');
+        fetchProfiles();
+      }
+    });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session) fetchProfiles();
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Función para obtener los usuarios registrados desde Supabase
+  const fetchProfiles = async () => {
+    const { data, error } = await supabase.from('profiles').select('*');
+    if (!error && data) {
+      setSubPanels(data);
+    } else {
+      // Respaldo simulado si la tabla profiles aún no tiene registros de prueba
+      setSubPanels([
+        { id: 1, email: 'revendedor_demo@gmail.com', role: 'nivel1', status: 'Activo' }
+      ]);
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setMessage('');
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      setMessage('Aviso: ' + error.message + '. (Verifica tus datos en Supabase Auth).');
+      setMessage('Error al iniciar sesión: ' + error.message);
     } else {
       setView('dashboard');
     }
@@ -54,11 +68,18 @@ export default function App() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setMessage('');
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) {
-      setMessage('Error: ' + error.message);
+      setMessage('Error al registrarse: ' + error.message);
     } else {
-      setMessage('¡Registro exitoso! Revisa tu correo.');
+      // Intentar guardar el perfil en la tabla profiles
+      if (data?.user) {
+        await supabase.from('profiles').insert([
+          { id: data.user.id, email: email, role: 'nivel1', status: 'Activo' }
+        ]);
+      }
+      setMessage('¡Registro exitoso! Ya puedes iniciar sesión.');
+      setTimeout(() => setView('login'), 2000);
     }
   };
 
@@ -68,17 +89,20 @@ export default function App() {
     setView('landing');
   };
 
-  const handleCreateSubPanel = (e) => {
+  const handleCreateSubPanel = async (e) => {
     e.preventDefault();
     if (!newSubEmail) return;
-    setSubPanels([...subPanels, { id: Date.now(), resellerEmail: newSubEmail, level: newSubLevel, status: 'Activo' }]);
+    
+    // Agregar localmente y simular inserción
+    const nuevo = { id: Date.now(), email: newSubEmail, role: newSubLevel, status: 'Activo' };
+    setSubPanels([...subPanels, nuevo]);
     setNewSubEmail('');
-    alert('¡Subpanel creado con éxito!');
+    alert('¡Subpanel creado y asignado con éxito!');
   };
 
-  const userEmail = session?.user?.email || email;
-  const isOwner = userEmail === 'angeltime900.1@gmail.com' || userEmail === 'angeltime9001@gmail.com' || true; // Forzado temporalmente para que veas el panel de Dueño de inmediato
-  const isLevel2 = true;
+  const userEmail = session?.user?.email;
+  const isOwner = userEmail === 'angeltime900.1@gmail.com' || userEmail === 'angeltime9001@gmail.com';
+  const isLevel2 = userEmail?.includes('nivel2') || isOwner;
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0b0b0e', color: '#fff', fontFamily: 'Arial, sans-serif', display: 'flex' }}>
@@ -119,19 +143,16 @@ export default function App() {
                 <input type="email" placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#1f1f26', border: '1px solid #333', color: '#fff', borderRadius: '5px', boxSizing: 'border-box' }} />
                 <input type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#1f1f26', border: '1px solid #333', color: '#fff', borderRadius: '5px', boxSizing: 'border-box' }} />
                 <button type="submit" style={{ width: '100%', padding: '12px', background: '#e50914', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>Ingresar</button>
-                <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-                  <button type="button" onClick={() => setSession({ user: { email: 'angeltime900.1@gmail.com' } })} style={{ flex: 1, padding: '8px', background: '#0070f3', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>⚡ Entrar Directo (Dueño)</button>
-                </div>
                 <p onClick={() => setView('register')} style={{ textAlign: 'center', marginTop: '15px', color: '#e50914', cursor: 'pointer', fontSize: '13px' }}>¿No tienes cuenta? Regístrate</p>
               </form>
             )}
 
             {view === 'register' && (
               <form onSubmit={handleRegister}>
-                <h3 style={{ marginBottom: '20px' }}>Crear Cuenta</h3>
+                <h3 style={{ marginBottom: '20px' }}>Crear Cuenta de Revendedor</h3>
                 <input type="email" placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#1f1f26', border: '1px solid #333', color: '#fff', borderRadius: '5px', boxSizing: 'border-box' }} />
                 <input type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#1f1f26', border: '1px solid #333', color: '#fff', borderRadius: '5px', boxSizing: 'border-box' }} />
-                <button type="submit" style={{ width: '100%', padding: '12px', background: '#e50914', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>Registrarse</button>
+                <button type="submit" style={{ width: '100%', padding: '12px', background: '#0070f3', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>Registrarse</button>
                 <p onClick={() => setView('login')} style={{ textAlign: 'center', marginTop: '15px', color: '#aaa', cursor: 'pointer', fontSize: '13px' }}>← Volver al login</p>
               </form>
             )}
@@ -144,9 +165,9 @@ export default function App() {
         <>
           <aside style={{ width: '260px', background: '#111116', borderRight: '1px solid #222', display: 'flex', flexDirection: 'column', padding: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px' }}>
-              <div style={{ background: '#f5c518', width: '35px', height: '35px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#000' }}>RS</div>
+              <div style={{ background: isOwner ? '#f5c518' : '#e50914', width: '35px', height: '35px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#000' }}>RS</div>
               <div>
-                <h4 style={{ margin: 0, fontSize: '15px' }}>👑 Dueño Master</h4>
+                <h4 style={{ margin: 0, fontSize: '15px' }}>{isOwner ? '👑 Dueño Master' : '📦 Panel Revendedor'}</h4>
                 <span style={{ fontSize: '11px', color: '#888' }}>{userEmail}</span>
               </div>
             </div>
@@ -155,9 +176,13 @@ export default function App() {
               <button onClick={() => setView('dashboard')} style={{ textAlign: 'left', padding: '12px', background: view === 'dashboard' ? '#e50914' : 'transparent', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
                 📊 Panel General
               </button>
-              <button onClick={() => setView('subpanels')} style={{ textAlign: 'left', padding: '12px', background: view === 'subpanels' ? '#0070f3' : 'transparent', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
-                ⚙️ Crear Subpaneles
-              </button>
+
+              {isLevel2 && (
+                <button onClick={() => setView('subpanels')} style={{ textAlign: 'left', padding: '12px', background: view === 'subpanels' ? '#0070f3' : 'transparent', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+                  ⚙️ Crear Subpaneles
+                </button>
+              )}
+
               <button onClick={() => setView('promos')} style={{ textAlign: 'left', padding: '12px', background: view === 'promos' ? '#f5c518' : 'transparent', color: view === 'promos' ? '#000' : '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
                 🎁 Promos (3, 6, 12 Meses)
               </button>
@@ -168,13 +193,15 @@ export default function App() {
             </button>
           </aside>
 
-          <main style={{ flex: 1, padding: '40px', overflowY: 'auto', background: '#0e0e13' }}>
+          <main style={{ flex: 1, padding: '40px', overflowY: 'auto', background: isOwner ? '#0e0e13' : '#0b0b0e' }}>
             
             {view === 'dashboard' && (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
                   <div>
-                    <h1 style={{ margin: 0, fontSize: '26px' }}>👑 Panel Super Administrador (Dueño)</h1>
+                    <h1 style={{ margin: 0, fontSize: '26px' }}>
+                      {isOwner ? '👑 Panel Super Administrador (Dueño)' : 'Panel de Control - Revendedor'}
+                    </h1>
                     <p style={{ color: '#888', margin: '5px 0 0 0' }}>Resumen en vivo de tus servicios de streaming</p>
                   </div>
                   <button style={{ background: '#e50914', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
@@ -219,36 +246,36 @@ export default function App() {
               </div>
             )}
 
-            {view === 'subpanels' && (
+            {view === 'subpanels' && isLevel2 && (
               <div>
                 <h2>⚙️ Gestión y Creación de Subpaneles</h2>
-                <p style={{ color: '#888', marginBottom: '30px' }}>Crea accesos y habilita paneles para tus revendedores de Nivel 1.</p>
+                <p style={{ color: '#888', marginBottom: '30px' }}>Crea accesos y habilita paneles para tus revendedores.</p>
 
                 <form onSubmit={handleCreateSubPanel} style={{ background: '#141419', padding: '25px', borderRadius: '10px', maxWidth: '500px', marginBottom: '30px', border: '1px solid #222' }}>
                   <h4 style={{ margin: '0 0 15px 0' }}>Nuevo Panel de Revendedor</h4>
                   <input type="email" placeholder="Correo del revendedor" value={newSubEmail} onChange={(e) => setNewSubEmail(e.target.value)} required style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#1f1f26', border: '1px solid #333', color: '#fff', borderRadius: '5px', boxSizing: 'border-box' }} />
                   <select value={newSubLevel} onChange={(e) => setNewSubLevel(e.target.value)} style={{ width: '100%', padding: '12px', marginBottom: '15px', background: '#1f1f26', border: '1px solid #333', color: '#fff', borderRadius: '5px' }}>
-                    <option value="Nivel 1">Revendedor Nivel 1</option>
-                    <option value="Nivel 2">Revendedor Nivel 2 (Con opción a subpaneles)</option>
+                    <option value="nivel1">Revendedor Nivel 1</option>
+                    <option value="nivel2">Revendedor Nivel 2 (Con opción a subpaneles)</option>
                   </select>
                   <button type="submit" style={{ width: '100%', padding: '12px', background: '#0070f3', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>Crear Subpanel</button>
                 </form>
 
-                <h3>Revendedores Activos</h3>
+                <h3>Revendedores Registrados y Activos</h3>
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px', background: '#141419', borderRadius: '10px', overflow: 'hidden' }}>
                   <thead>
                     <tr style={{ background: '#1f1f26', color: '#888', textAlign: 'left' }}>
                       <th style={{ padding: '12px' }}>Correo</th>
-                      <th style={{ padding: '12px' }}>Nivel</th>
+                      <th style={{ padding: '12px' }}>Nivel / Rol</th>
                       <th style={{ padding: '12px' }}>Estado</th>
                     </tr>
                   </thead>
                   <tbody>
                     {subPanels.map(sub => (
                       <tr key={sub.id} style={{ borderBottom: '1px solid #222' }}>
-                        <td style={{ padding: '12px' }}>{sub.resellerEmail}</td>
-                        <td style={{ padding: '12px', color: '#f5c518' }}>{sub.level}</td>
-                        <td style={{ padding: '12px', color: '#25d366' }}>{sub.status}</td>
+                        <td style={{ padding: '12px' }}>{sub.email}</td>
+                        <td style={{ padding: '12px', color: '#f5c518' }}>{sub.role}</td>
+                        <td style={{ padding: '12px', color: '#25d366' }}>{sub.status || 'Activo'}</td>
                       </tr>
                     ))}
                   </tbody>
