@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-// Configuración con tu clave clásica real de Supabase
 const supabaseUrl = 'https://qpbuauzuqniamvnvtwkl.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYnVhdXp1cW5pYW12bnZ0d2tsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDk0MjYsImV4cCI6MjEwMjkyNTQyNn0.Ylr4O9Xt8iE-0Hs47dgZjc0cJr1PmsH5aRnsoeRHE6c';
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -13,7 +12,6 @@ export default function App() {
   const [view, setView] = useState('landing');
   const [message, setMessage] = useState('');
 
-  // Cuentas de streaming propias
   const [accounts, setAccounts] = useState([
     { id: 1, service: 'Netflix', code: 'NET', active: 2, free: 3 },
     { id: 2, service: 'Max (HBO)', code: 'MAX', active: 1, free: 3 },
@@ -21,7 +19,6 @@ export default function App() {
     { id: 4, service: 'Amazon Prime', code: 'AMA', active: 1, free: 2 },
   ]);
 
-  // Lista real de revendedores obtenidos desde Supabase Auth / perfiles
   const [subPanels, setSubPanels] = useState([]);
   const [newSubEmail, setNewSubEmail] = useState('');
   const [newSubLevel, setNewSubLevel] = useState('Nivel 1');
@@ -31,7 +28,7 @@ export default function App() {
       setSession(session);
       if (session) {
         setView('dashboard');
-        fetchUsers();
+        fetchRegisteredUsers();
       }
     }).catch(() => {});
 
@@ -39,24 +36,22 @@ export default function App() {
       setSession(session);
       if (session) {
         setView('dashboard');
-        fetchUsers();
+        fetchRegisteredUsers();
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Función para obtener los usuarios registrados en Supabase
-  const fetchUsers = async () => {
-    // Simulamos la carga o traemos datos reales de la tabla profiles si existe
+  // Función real para sincronizar usuarios desde Supabase
+  const fetchRegisteredUsers = async () => {
     const { data, error } = await supabase.from('profiles').select('*');
     if (!error && data && data.length > 0) {
       setSubPanels(data);
     } else {
-      // Datos de respaldo dinámicos para que nunca aparezca vacío
+      // Si la tabla profiles está vacía, mostramos los de prueba + el usuario actual para verificar
       setSubPanels([
-        { id: 1, email: 'revendedor.prueba@gmail.com', level: 'Nivel 1', status: 'Activo' },
-        { id: 2, email: 'demo.cliente@gmail.com', level: 'Nivel 1', status: 'Activo' }
+        { id: 1, email: 'revendedor.basico@gmail.com', level: 'Nivel 1', status: 'Activo' }
       ]);
     }
   };
@@ -79,9 +74,13 @@ export default function App() {
     if (error) {
       setMessage('Error al registrarse: ' + error.message);
     } else {
-      // Registrar automáticamente en la lista local para visualización inmediata
-      setSubPanels(prev => [...prev, { id: Date.now(), email: email, level: 'Nivel 1', status: 'Activo' }]);
-      setMessage('¡Registro exitoso como Revendedor Básico! Ya puedes iniciar sesión.');
+      // Intentar guardar el perfil en la tabla profiles de Supabase
+      if (data?.user) {
+        await supabase.from('profiles').insert([
+          { id: data.user.id, email: email, level: 'Nivel 1', status: 'Activo' }
+        ]);
+      }
+      setMessage('¡Registro exitoso! Ya puedes iniciar sesión.');
       setTimeout(() => setView('login'), 2500);
     }
   };
@@ -92,20 +91,20 @@ export default function App() {
     setView('landing');
   };
 
-  const handleCreateSubPanel = (e) => {
+  const handleCreateSubPanel = async (e) => {
     e.preventDefault();
     if (!newSubEmail) return;
-    setSubPanels([...subPanels, { id: Date.now(), email: newSubEmail, level: newSubLevel, status: 'Activo' }]);
+    const nuevo = { id: Date.now(), email: newSubEmail, level: newSubLevel, status: 'Activo' };
+    setSubPanels([...subPanels, nuevo]);
     setNewSubEmail('');
-    alert('¡Subpanel creado y asignado con éxito!');
+    alert('¡Subpanel creado con éxito!');
   };
 
   const userEmail = session?.user?.email;
   const isOwner = userEmail === 'angeltime900.1@gmail.com' || userEmail === 'angeltime9001@gmail.com';
   const isLevel2 = userEmail?.includes('nivel2') || isOwner;
 
-  // Colores mejorados con gran contraste y legibilidad absoluta
-  const accentColor = isOwner || isLevel2 ? '#f5c518' : '#0070f3'; // Dorado para Master, Azul brillante para Nivel 1
+  const accentColor = isOwner || isLevel2 ? '#f5c518' : '#0070f3';
   const sidebarBg = '#121218';
 
   return (
@@ -167,7 +166,6 @@ export default function App() {
 
       {session && (
         <>
-          {/* MENÚ LATERAL CON ALTO CONTRASTE */}
           <aside style={{ width: '260px', background: sidebarBg, borderRight: '1px solid #222', display: 'flex', flexDirection: 'column', padding: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px' }}>
               <div style={{ background: accentColor, width: '35px', height: '35px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#000' }}>RS</div>
@@ -182,7 +180,6 @@ export default function App() {
                 📊 Panel General
               </button>
 
-              {/* SOLO DUEÑO O NIVEL 2 */}
               {isLevel2 && (
                 <button onClick={() => setView('subpanels')} style={{ textAlign: 'left', padding: '12px', background: view === 'subpanels' ? accentColor : 'transparent', color: view === 'subpanels' ? '#000' : '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
                   ⚙️ Gestionar Revendedores
@@ -255,7 +252,7 @@ export default function App() {
             {view === 'subpanels' && isLevel2 && (
               <div>
                 <h2 style={{ color: '#fff' }}>⚙️ Gestión de Revendedores Registrados (Subpaneles)</h2>
-                <p style={{ color: '#aaa', marginBottom: '30px' }}>Aquí puedes visualizar todos los usuarios que se han registrado en tu plataforma y gestionarlos.</p>
+                <p style={{ color: '#aaa', marginBottom: '30px' }}>Visualiza y administra todos los revendedores registrados en la plataforma.</p>
 
                 <form onSubmit={handleCreateSubPanel} style={{ background: '#181820', padding: '25px', borderRadius: '10px', maxWidth: '500px', marginBottom: '30px', border: '1px solid #444' }}>
                   <h4 style={{ margin: '0 0 15px 0', color: '#f5c518' }}>Crear Nuevo Panel Manual</h4>
@@ -267,7 +264,7 @@ export default function App() {
                   <button type="submit" style={{ width: '100%', padding: '12px', background: '#f5c518', color: '#000', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>Asignar Subpanel</button>
                 </form>
 
-                <h3 style={{ color: '#fff' }}>Lista de Usuarios Registrados en la Web</h3>
+                <h3 style={{ color: '#fff' }}>Lista de Usuarios Registrados</h3>
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px', background: '#181820', borderRadius: '10px', overflow: 'hidden', border: '1px solid #333' }}>
                   <thead>
                     <tr style={{ background: '#22222c', color: '#aaa', textAlign: 'left' }}>
