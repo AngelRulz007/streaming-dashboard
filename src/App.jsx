@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-// Configuración de Supabase con llave clásica compatible
+// Configuración oficial con tu clave real integrada
 const supabaseUrl = 'https://qpbuauzuqniamvnvtwkl.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYnVhdXp1cW5pYW12bnZ0d2tsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDk0MjYsImV4cCI6MjEwMjkyNTQyNn0.Ylr4O9Xt8iE-0Hs47dgZjc0cJr1PmsH5aRnsoeRHE6c'; // Llave clásica anon
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYnVhdXp1cW5pYW12bnZ0d2tsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDk0MjYsImV4cCI6MjEwMjkyNTQyNn0.Ylr4O9Xt8iE-0Hs47dgZjc0cJr1PmsH5aRnsoeRHE6c';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function App() {
@@ -264,35 +264,3 @@ export default function App() {
             {view === 'promos' && (
               <div>
                 <h2>🎁 Configuración de Promociones</h2>
-                <p style={{ color: '#888', marginBottom: '30px' }}>Gestiona los paquetes y descuentos especiales para tus clientes y revendedores.</p>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                  <div style={{ background: '#141419', padding: '25px', borderRadius: '10px', border: '1px solid #f5c518' }}>
-                    <h3 style={{ color: '#f5c518', marginTop: 0 }}>Paquete 3 Meses</h3>
-                    <p style={{ color: '#888' }}>Ideal para retención de clientes con 10% de descuento automático.</p>
-                    <button style={{ width: '100%', padding: '10px', background: '#f5c518', color: '#000', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>Activar Promo</button>
-                  </div>
-                  <div style={{ background: '#141419', padding: '25px', borderRadius: '10px', border: '1px solid #0070f3' }}>
-                    <h3 style={{ color: '#0070f3', marginTop: 0 }}>Paquete 6 Meses</h3>
-                    <p style={{ color: '#888' }}>Pago semestral con beneficios y 20% de descuento.</p>
-                    <button style={{ width: '100%', padding: '10px', background: '#0070f3', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>Activar Promo</button>
-                  </div>
-                  <div style={{ background: '#141419', padding: '25px', borderRadius: '10px', border: '1px solid #e50914' }}>
-                    <h3 style={{ color: '#e50914', marginTop: 0 }}>Paquete 12 Meses</h3>
-                    <p style={{ color: '#888' }}>Membresía anual exclusiva con máxima rentabilidad para revendedores.</p>
-                    <button style={{ width: '100%', padding: '10px', background: '#e50914', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>Activar Promo</button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-          </main>
-        </>
-      )}
-
-      <a href="https://wa.me/51999999999" target="_blank" rel="noopener noreferrer" style={{ position: 'fixed', bottom: '25px', right: '25px', background: '#25d366', color: '#fff', borderRadius: '50%', width: '60px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '30px', textDecoration: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.4)', zIndex: 1000 }}>
-        💬
-      </a>
-    </div>
-  );
-}
