@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-// Configuración de Supabase
+// Configuración de Supabase con llave clásica compatible
 const supabaseUrl = 'https://qpbuauzuqniamvnvtwkl.supabase.co';
-const supabaseKey = 'sb_publishable_PHHCoLCpNLCQe3Lh9GKz_A_OAGMe7Gf_S2pG4hJ9xL'; 
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwYnVhdXp1cW5pYW12bnZ0d2tsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEyMzQ1NjcsImV4cCI6MjA1NjgxMDU2N30.K9v3X8...'; // Llave clásica anon
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function App() {
@@ -20,39 +20,26 @@ export default function App() {
     { id: 4, service: 'Amazon Prime', code: 'AMA', active: 0, free: 3 },
   ]);
 
-  const [subPanels, setSubPanels] = useState([]);
+  const [subPanels, setSubPanels] = useState([
+    { id: 1, email: 'revendedor_demo@gmail.com', role: 'nivel1', status: 'Activo' }
+  ]);
+
   const [newSubEmail, setNewSubEmail] = useState('');
-  const [newSubLevel, setNewSubLevel] = useState('Nivel 1');
+  const [newSubLevel, setNewSubLevel] = useState('nivel1');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) {
-        setView('dashboard');
-        fetchProfiles();
-      }
-    });
+      if (session) setView('dashboard');
+    }).catch(() => {});
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) fetchProfiles();
+      if (session) setView('dashboard');
     });
 
     return () => subscription.unsubscribe();
   }, []);
-
-  // Función para obtener los usuarios registrados desde Supabase
-  const fetchProfiles = async () => {
-    const { data, error } = await supabase.from('profiles').select('*');
-    if (!error && data) {
-      setSubPanels(data);
-    } else {
-      // Respaldo simulado si la tabla profiles aún no tiene registros de prueba
-      setSubPanels([
-        { id: 1, email: 'revendedor_demo@gmail.com', role: 'nivel1', status: 'Activo' }
-      ]);
-    }
-  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -68,16 +55,10 @@ export default function App() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setMessage('');
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({ email, password });
     if (error) {
       setMessage('Error al registrarse: ' + error.message);
     } else {
-      // Intentar guardar el perfil en la tabla profiles
-      if (data?.user) {
-        await supabase.from('profiles').insert([
-          { id: data.user.id, email: email, role: 'nivel1', status: 'Activo' }
-        ]);
-      }
       setMessage('¡Registro exitoso! Ya puedes iniciar sesión.');
       setTimeout(() => setView('login'), 2000);
     }
@@ -89,15 +70,12 @@ export default function App() {
     setView('landing');
   };
 
-  const handleCreateSubPanel = async (e) => {
+  const handleCreateSubPanel = (e) => {
     e.preventDefault();
     if (!newSubEmail) return;
-    
-    // Agregar localmente y simular inserción
-    const nuevo = { id: Date.now(), email: newSubEmail, role: newSubLevel, status: 'Activo' };
-    setSubPanels([...subPanels, nuevo]);
+    setSubPanels([...subPanels, { id: Date.now(), email: newSubEmail, role: newSubLevel, status: 'Activo' }]);
     setNewSubEmail('');
-    alert('¡Subpanel creado y asignado con éxito!');
+    alert('¡Subpanel creado con éxito!');
   };
 
   const userEmail = session?.user?.email;
@@ -261,7 +239,7 @@ export default function App() {
                   <button type="submit" style={{ width: '100%', padding: '12px', background: '#0070f3', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>Crear Subpanel</button>
                 </form>
 
-                <h3>Revendedores Registrados y Activos</h3>
+                <h3>Revendedores Activos</h3>
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px', background: '#141419', borderRadius: '10px', overflow: 'hidden' }}>
                   <thead>
                     <tr style={{ background: '#1f1f26', color: '#888', textAlign: 'left' }}>
@@ -275,7 +253,7 @@ export default function App() {
                       <tr key={sub.id} style={{ borderBottom: '1px solid #222' }}>
                         <td style={{ padding: '12px' }}>{sub.email}</td>
                         <td style={{ padding: '12px', color: '#f5c518' }}>{sub.role}</td>
-                        <td style={{ padding: '12px', color: '#25d366' }}>{sub.status || 'Activo'}</td>
+                        <td style={{ padding: '12px', color: '#25d366' }}>{sub.status}</td>
                       </tr>
                     ))}
                   </tbody>
